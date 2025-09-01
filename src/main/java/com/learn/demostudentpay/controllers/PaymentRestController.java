@@ -56,7 +56,6 @@ public class PaymentRestController {
         return paymentRepository.findByStatus(status);
     }
 
-
     @GetMapping("/type")
     public List<Payment> paymentsByType(@RequestParam PaymentType type) {
         return paymentRepository.findByType(type);
@@ -69,12 +68,12 @@ public class PaymentRestController {
         Path filePath = Paths.get(payment.getFile());
 
         if (!Files.exists(filePath)) {
-            throw new FileNotFoundException("Payment not found"+ filePath.toString());
+            throw new FileNotFoundException("Payment not found" + filePath);
         }
         Resource resource = new UrlResource(filePath.toUri());
 
         if (!resource.exists()) {
-            throw new FileNotFoundException("Payment not found"+ filePath.toString());
+            throw new FileNotFoundException("Payment not found" + filePath);
         }
 
         return ResponseEntity.ok()
@@ -83,8 +82,8 @@ public class PaymentRestController {
     }
 
     /*
-    * Put Methods
-    * */
+     * Put Methods
+     * */
     @PutMapping("/status/update/{id}")
     public Payment updatePaymentById(@RequestParam PaymentStatus paymentStatus, @PathVariable Long id) {
         Payment paymentToUpdate = paymentRepository.findById(id).get();
@@ -100,8 +99,8 @@ public class PaymentRestController {
     }
 
     /*
-    * Post Methods
-    * */
+     * Post Methods
+     * */
     @PostMapping(path = "/newPayment", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public Payment createPayment(@RequestParam MultipartFile file, LocalDate date, double amount,
                                  PaymentType paymentType, PaymentStatus paymentStatus, String studentCode) throws IOException {
@@ -114,7 +113,7 @@ public class PaymentRestController {
         }
 
         // 3. Generate safe file name
-        String fileName = UUID.randomUUID().toString() + ".pdf";
+        String fileName = UUID.randomUUID() + ".pdf";
         Path filePath = folderPath.resolve(fileName);
 
         // 4. Save file safely
