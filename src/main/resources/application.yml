@@ -1,0 +1,49 @@
+spring:
+  application:
+    name: payment-service
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+  datasource:
+    url: ${DATABASE_URL}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    #authentication-database: admin
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+    database: postgresql
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc:
+          lob:
+            non_contextual_creation: true
+        globally_quoted_identifiers: true # Active les guillemets pour tous les identifiants
+
+  flyway: # is to manage the database schema in a structured and organized way
+    baseline-on-migrate: true
+    enabled: true
+    baseline-description: "Baseline for the database"
+    baseline-version: 1
+    user: ${spring.datasource.username}
+    password: ${spring.datasource.password}
+    locations: ${MIGRATION_DIR}
+    schemas: public
+    out-of-order: false
+    validate-on-migrate: true
+    placeholders:
+      schema_name: public
+
+  # Configuration de log
+logging:
+  level:
+    com.albaridbank: DEBUG
+    org.springframework: INFO
+    org.hibernate: INFO
+    org.hibernate.SQL: DEBUG
+    org.flywaydb: INFO  # pour mieux suivre les migrations Flyway

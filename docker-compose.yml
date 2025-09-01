@@ -1,0 +1,23 @@
+services:
+  postgres:
+    container_name: ${DOCKER_CONTAINER_NAME}
+    image: postgres
+    environment:
+      POSTGRES_USER: ${DATABASE_USERNAME}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      PGDATA: ${DOCKER_VOLUME_PATH} # Custom path for PostgreSQL data
+    volumes:
+      - postgres:${DOCKER_VOLUME_PATH} # Persist data even after container is removed
+    ports:
+      - "${DOCKER_PORT}:5432" # Forward the exposed port to the host machine
+    networks:
+      - ${DOCKER_NETWORK_NAME}
+    restart: unless-stopped  # Restart policy
+
+networks:
+  ${DOCKER_NETWORK_NAME}:
+    driver: bridge
+
+volumes:
+  postgres:
+  pgadmin:
