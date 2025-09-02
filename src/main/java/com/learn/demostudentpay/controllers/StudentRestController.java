@@ -3,10 +3,14 @@ package com.learn.demostudentpay.controllers;
 import com.learn.demostudentpay.entites.Student;
 import com.learn.demostudentpay.repositorys.StudentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -25,38 +29,64 @@ public class StudentRestController {
     }
 
     @GetMapping("/all")
-    public List<Student> getAllStudents(){
+    public List<Student> getAllStudents() {
         return studentRepository.findAll();
     }
 
     @GetMapping("/{code}")
-    public Student getStudentByCode(@PathVariable String code){
+    public Student getStudentByCode(@PathVariable String code) {
         return studentRepository.findByCode(code);
     }
 
     @GetMapping("/programId")
-    public List<Student> getStudentByProgramId(@RequestParam String programId){
+    public List<Student> getStudentByProgramId(@RequestParam String programId) {
         return studentRepository.findByProgramID(programId);
     }
 
+    @GetMapping(path = "/photo/{code}")
+    public ResponseEntity<Resource> getImageByCode(@PathVariable String code) throws IOException {
+        Student student = studentRepository.findByCode(code);
+
+        Path filePath = Paths.get(System.getProperty("user.home"), "edd-demo-yousfiData", "users-photos");
+        if (!Files.exists(filePath)) Files.createDirectory(filePath);
+        //System.out.println(filePath.toString());
+
+        Path PathFinal = Paths.get(filePath.resolve(student.getPhoto()).toUri());
+        //System.out.println(PathFinal+" photoID "+student.getPhoto());
+
+        if (!Files.exists(PathFinal)) {
+            throw new FileNotFoundException("Image not found  "+ PathFinal);
+        }
+        Resource resource = new UrlResource(PathFinal.toUri());
+
+        if (!resource.exists()) {
+            throw new FileNotFoundException("Image not found  "+ PathFinal);
+        }
+
+        String contentType = Files.probeContentType(PathFinal);
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(contentType))
+                .body(resource);
+    }
+
     /*
-    * Put Methods
-    * */
+     * Put Methods
+     * */
     @PutMapping("/programId/update/{code}")
-    public Student updateProgramByCode(@RequestParam String programId, @PathVariable String code){
+    public Student updateProgramByCode(@RequestParam String programId, @PathVariable String code) {
         Student student = studentRepository.findByCode(code);
         student.setProgramID(programId);
         return studentRepository.save(student);
     }
 
     /*
-    * Post Mothed
-    * */
+     * Post Mothed
+     * */
     @PostMapping(path = "/newStudent/", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public Student createStudent(@RequestParam MultipartFile file, String firstName,
                                  String lastName, String programID) throws IOException {
 
-        Path filePath = Paths.get(System.getProperty("user.home"),"edd-demo-yousfiData","users-photos");
+        Path filePath = Paths.get(System.getProperty("user.home"), "edd-demo-yousfiData", "users-photos");
         if (!Files.exists(filePath)) Files.createDirectory(filePath);
 
         String originalFilename = file.getOriginalFilename();
@@ -75,7 +105,7 @@ public class StudentRestController {
                 .Id(UUID.randomUUID().toString())
                 .firstName(firstName)
                 .lastName(lastName)
-                .code("STU"+ UUID.randomUUID())
+                .code("STU" + UUID.randomUUID())
                 .programID(programID)
                 .Photo(fileName)
                 .build();
