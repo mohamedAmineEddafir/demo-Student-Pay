@@ -41,7 +41,6 @@ public class PaymentServiceImpl implements PaymentServiceInterface {
         this.studentRepository = studentRepository;
     }
 
-
     @Override
     public List<Payment> getPaymentsImpl() {
         return paymentRepository.findAll();
@@ -89,21 +88,21 @@ public class PaymentServiceImpl implements PaymentServiceInterface {
 
     @Override
     public Payment updatePaymentStatusImpl(PaymentStatus paymentStatus, Long id) {
-        Payment paymentToUpdate = paymentRepository.findById(id).orElseThrow(()-> new IllegalArgumentException("Payment not found"));
+        Payment paymentToUpdate = paymentRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Payment not found"));
         paymentToUpdate.setStatus(paymentStatus);
         return paymentRepository.save(paymentToUpdate);
     }
 
     @Override
     public Payment updatePaymentTypeImpl(@RequestParam PaymentType paymentType, @PathVariable Long id) {
-        Payment paymentToUpdate = paymentRepository.findById(id).orElseThrow(()-> new IllegalArgumentException("Payment not found to modify Type"));
+        Payment paymentToUpdate = paymentRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Payment not found to modify Type"));
         paymentToUpdate.setType(paymentType);
         return paymentRepository.save(paymentToUpdate);
     }
 
     @Override
     public Payment savePaymentImpl(MultipartFile file, LocalDate date, double amount,
-                               PaymentType paymentType, PaymentStatus paymentStatus, String studentCode) throws IOException {
+                                   PaymentType paymentType, PaymentStatus paymentStatus, String studentCode) throws IOException {
         // 1. Create new folder to make of if owr file
         Path folderPath = Paths.get(System.getProperty("user.home"), "edd-demo-yousfiData", "Payments");
 
