@@ -13,6 +13,7 @@ import lombok.*;
 @Data
 @Builder
 @ToString
+@EqualsAndHashCode
 public class Student {
     @Id
     private String Id;

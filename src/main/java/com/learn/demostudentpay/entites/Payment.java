@@ -13,6 +13,7 @@ import java.time.LocalDate;
 @Data
 @Builder
 @ToString
+@EqualsAndHashCode
 public class Payment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
