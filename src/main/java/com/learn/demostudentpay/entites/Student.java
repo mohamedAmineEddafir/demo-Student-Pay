@@ -23,4 +23,8 @@ public class Student {
     private String code;
     private String programID;
     private String Photo;
+
+    public String getFullName() {
+        return firstName + " " + lastName;
+    }
 }
