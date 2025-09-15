@@ -1,9 +1,12 @@
 package com.learn.demostudentpay.services.ServiceImpl;
 
+import com.learn.demostudentpay.dtos.PaymentDTO.PaymentRequestDTO;
+import com.learn.demostudentpay.dtos.PaymentDTO.PaymentResponseDTO;
 import com.learn.demostudentpay.entites.Payment;
 import com.learn.demostudentpay.entites.PaymentStatus;
 import com.learn.demostudentpay.entites.PaymentType;
 import com.learn.demostudentpay.entites.Student;
+import com.learn.demostudentpay.mappers.PaymentMapper;
 import com.learn.demostudentpay.repositorys.PaymentRepository;
 import com.learn.demostudentpay.repositorys.StudentRepository;
 import com.learn.demostudentpay.services.serviceInterface.PaymentServiceInterface;
@@ -14,8 +17,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.FileNotFoundException;
@@ -24,7 +25,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -32,38 +32,45 @@ import java.util.UUID;
 @Transactional
 public class PaymentServiceImpl implements PaymentServiceInterface {
 
+    private final PaymentMapper  paymentMapper;
     private final PaymentRepository paymentRepository;
     private final StudentRepository studentRepository;
 
     @Autowired
-    public PaymentServiceImpl(PaymentRepository paymentRepository, StudentRepository studentRepository) {
+    public PaymentServiceImpl(PaymentRepository paymentRepository, StudentRepository studentRepository,  PaymentMapper paymentMapper) {
         this.paymentRepository = paymentRepository;
         this.studentRepository = studentRepository;
+        this.paymentMapper = paymentMapper;
     }
 
     @Override
-    public List<Payment> getPaymentsImpl() {
-        return paymentRepository.findAll();
+    public List<PaymentResponseDTO> getPaymentsImpl() {
+        List<Payment> payments = paymentRepository.findAll();
+        return paymentMapper.toResponseDtoList(payments);
     }
 
     @Override
-    public Payment getPaymentByIdImpl(Long id) {
-        return paymentRepository.findById(id).isPresent() ? paymentRepository.findById(id).get() : null;
+    public PaymentResponseDTO getPaymentByIdImpl(Long id) {
+        Payment payment = paymentRepository.findById(id).orElse(null);
+        return paymentMapper.toResponseDto(payment);
     }
 
     @Override
-    public List<Payment> paymentsByStudentCodeImpl(String code) {
-        return paymentRepository.findByStudentCode(code);
+    public List<PaymentResponseDTO> paymentsByStudentCodeImpl(String code) {
+        List<Payment> payment = paymentRepository.findByStudentCode(code);
+        return paymentMapper.toResponseDtoList(payment);
     }
 
     @Override
-    public List<Payment> paymentsByStatusImpl(PaymentStatus status) {
-        return paymentRepository.findByStatus(status);
+    public List<PaymentResponseDTO> paymentsByStatusImpl(PaymentStatus status) {
+        List<Payment> payment = paymentRepository.findByStatus(status);
+        return paymentMapper.toResponseDtoList(payment);
     }
 
     @Override
-    public List<Payment> paymentsByTypeImpl(PaymentType type) {
-        return paymentRepository.findByType(type);
+    public List<PaymentResponseDTO> paymentsByTypeImpl(PaymentType type) {
+        List<Payment> payment = paymentRepository.findByType(type);
+        return paymentMapper.toResponseDtoList(payment);
     }
 
     @Override
@@ -87,41 +94,43 @@ public class PaymentServiceImpl implements PaymentServiceInterface {
     }
 
     @Override
-    public Payment updatePaymentStatusImpl(PaymentStatus paymentStatus, Long id) {
-        Payment paymentToUpdate = paymentRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Payment not found"));
+    public PaymentResponseDTO updatePaymentStatusImpl(PaymentStatus paymentStatus, Long id) {
+        Payment paymentToUpdate = paymentRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Payment not found to modify Status"));
         paymentToUpdate.setStatus(paymentStatus);
-        return paymentRepository.save(paymentToUpdate);
+        Payment updatedPayment = paymentRepository.save(paymentToUpdate);
+        return paymentMapper.toResponseDto(updatedPayment);
     }
 
     @Override
-    public Payment updatePaymentTypeImpl(@RequestParam PaymentType paymentType, @PathVariable Long id) {
+    public PaymentResponseDTO updatePaymentTypeImpl(PaymentType paymentType, Long id) {
         Payment paymentToUpdate = paymentRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Payment not found to modify Type"));
         paymentToUpdate.setType(paymentType);
-        return paymentRepository.save(paymentToUpdate);
+        Payment updatedPayment = paymentRepository.save(paymentToUpdate);
+        return paymentMapper.toResponseDto(updatedPayment);
     }
 
     @Override
-    public Payment savePaymentImpl(MultipartFile file, LocalDate date, double amount,
-                                   PaymentType paymentType, PaymentStatus paymentStatus, String studentCode) throws IOException {
-        // 1. Create new folder to make of if owr file
+    public PaymentRequestDTO savePaymentImpl(PaymentRequestDTO paymentRequestDTO, MultipartFile file) throws IOException {
+        // 1. Create folder if not exists
         Path folderPath = Paths.get(System.getProperty("user.home"), "edd-demo-yousfiData", "Payments");
+        if (!Files.exists(folderPath)) { Files.createDirectories(folderPath);}
 
-        // 2. check if folder is existe
-        if (!Files.exists(folderPath)) {
-            Files.createDirectories(folderPath);
-        }
-
-        // 3. Generate safe file name
+        // 2. Generate safe file name
         String fileName = UUID.randomUUID() + ".pdf";
         Path filePath = folderPath.resolve(fileName);
 
-        // 4. Save file safely
+        // 3. Save file
         Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
-        // 5. Retrieve studen
-        Student student = studentRepository.findByCode(studentCode);
+        // 4. Map DTO -> Entity
+        Payment payment = paymentMapper.toEntity(paymentRequestDTO);
+        payment.setFile(filePath.toString());
 
-        // 6. Create my New payment with (date, amount, paymentType, paymentStatus, studentCode)
+        // 5. Retrieve student
+        Student student = studentRepository.findByCode(paymentRequestDTO.getStudentId());
+        payment.setStudent(student);
+
+/*        // 6. Create my New payment with (date, amount, paymentType, paymentStatus, studentCode)
         Payment payment = Payment.builder()
                 .date(date)
                 .amount(amount)
@@ -129,9 +138,12 @@ public class PaymentServiceImpl implements PaymentServiceInterface {
                 .status(paymentStatus)
                 .student(student)
                 .file(filePath.toString())
-                .build();
+                .build();*/
 
-        // 7. save this new payment to DB
-        return paymentRepository.save(payment);
+        // 6. Save in DB
+        Payment savedPayment = paymentRepository.save(payment);
+
+        // 7. Return ResponseDTO
+        return paymentMapper.toPaymentRequestDTO(savedPayment);
     }
 }
