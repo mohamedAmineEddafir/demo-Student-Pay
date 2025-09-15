@@ -1,5 +1,7 @@
 package com.learn.demostudentpay.controllers;
 
+import com.learn.demostudentpay.dtos.PaymentDTO.PaymentRequestDTO;
+import com.learn.demostudentpay.dtos.PaymentDTO.PaymentResponseDTO;
 import com.learn.demostudentpay.entites.Payment;
 import com.learn.demostudentpay.entites.PaymentStatus;
 import com.learn.demostudentpay.entites.PaymentType;
@@ -28,27 +30,26 @@ public class PaymentRestController {
     }
 
     @GetMapping("/all")
-    public List<Payment> getPayments() {
+    public List<PaymentResponseDTO> getPayments() {
         return paymentService.getPaymentsImpl();
     }
-
     @GetMapping("/{id}")
-    public Payment getPaymentById(@PathVariable Long id) {
+    public PaymentResponseDTO getPaymentById(@PathVariable Long id) {
         return paymentService.getPaymentByIdImpl(id);
     }
 
     @GetMapping("/student/{code}/payments")
-    public List<Payment> paymentsByStudentCode(@PathVariable String code) {
+    public List<PaymentResponseDTO> paymentsByStudentCode(@PathVariable String code) {
         return paymentService.paymentsByStudentCodeImpl(code);
     }
 
     @GetMapping("/status")
-    public List<Payment> paymentsByStatus(@RequestParam PaymentStatus status) {
+    public List<PaymentResponseDTO> paymentsByStatus(@RequestParam PaymentStatus status) {
         return paymentService.paymentsByStatusImpl(status);
     }
 
     @GetMapping("/type")
-    public List<Payment> paymentsByType(@RequestParam PaymentType type) {
+    public List<PaymentResponseDTO> paymentsByType(@RequestParam PaymentType type) {
         return paymentService.paymentsByTypeImpl(type);
     }
 
@@ -58,25 +59,24 @@ public class PaymentRestController {
     }
 
     /*
-     * Put Methods
-     * */
+        Put Methods
+     */
     @PutMapping("/status/update/{id}")
-    public Payment updatePaymentById(@RequestParam PaymentStatus paymentStatus, @PathVariable Long id) {
+    public PaymentResponseDTO updatePaymentById(@RequestParam PaymentStatus paymentStatus, @PathVariable Long id) {
         return this.paymentService.updatePaymentStatusImpl(paymentStatus, id);
     }
 
     @PutMapping("/type/update/{id}")
-    public Payment updatePaymentTypeById(@RequestParam PaymentType paymentType, @PathVariable Long id) {
+    public PaymentResponseDTO updatePaymentTypeById(@RequestParam PaymentType paymentType, @PathVariable Long id) {
         return this.paymentService.updatePaymentTypeImpl(paymentType, id);
     }
 
     /*
-     * Post Methods
-     * */
+        Post Methods
+    */
     @PostMapping(path = "/newPayment", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public Payment createPayment(@RequestParam MultipartFile file, LocalDate date, double amount,
-                                 PaymentType paymentType, PaymentStatus paymentStatus, String studentCode) throws IOException {
+    public PaymentRequestDTO createPayment(@RequestParam PaymentRequestDTO paymentRequestDTO, @RequestParam MultipartFile file) throws IOException {
 
-        return this.paymentService.savePaymentImpl(file, date, amount, paymentType, paymentStatus, studentCode);
+        return this.paymentService.savePaymentImpl(paymentRequestDTO ,file);
     }
 }
