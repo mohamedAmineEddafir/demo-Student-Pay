@@ -1,7 +1,8 @@
 package com.learn.demostudentpay.services.ServiceImpl;
 
+import com.learn.demostudentpay.dtos.StudentDTO.StudentResponseDTO;
 import com.learn.demostudentpay.entites.Student;
-import com.learn.demostudentpay.repositorys.PaymentRepository;
+import com.learn.demostudentpay.mappers.StudentMapper;
 import com.learn.demostudentpay.repositorys.StudentRepository;
 import com.learn.demostudentpay.services.serviceInterface.StudentServiceInterface;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,27 +25,30 @@ import java.util.UUID;
 public class StudentServiceImpl implements StudentServiceInterface {
 
     private final StudentRepository studentRepository;
-    private final PaymentRepository paymentRepository;
+    private final StudentMapper studentMapper;
 
     @Autowired
-    public StudentServiceImpl(StudentRepository studentRepository, PaymentRepository paymentRepository) {
+    public StudentServiceImpl(StudentRepository studentRepository, StudentMapper studentMapper) {
         this.studentRepository = studentRepository;
-        this.paymentRepository = paymentRepository;
+        this.studentMapper = studentMapper;
     }
 
     @Override
-    public List<Student> getAllStudentsImpl() {
-        return studentRepository.findAll();
+    public List<StudentResponseDTO> getAllStudentsImpl() {
+        List<Student> student = studentRepository.findAll();
+        return studentMapper.toResponseDTOList(student);
     }
 
     @Override
-    public Student getStudentByCodeImpl(String code) {
-        return studentRepository.findByCode(code);
+    public StudentResponseDTO getStudentByCodeImpl(String code) {
+        Student student = studentRepository.findByCode(code);
+        return studentMapper.toResponseDTO(student);
     }
 
     @Override
-    public List<Student> getStudentByProgramIdImpl(String programId) {
-        return studentRepository.findByProgramID(programId);
+    public List<StudentResponseDTO> getStudentByProgramIdImpl(String programId) {
+        List<Student> studentPgId = studentRepository.findByProgramID(programId);
+        return studentMapper.toResponseDTOList(studentPgId);
     }
 
     @Override
@@ -74,30 +78,50 @@ public class StudentServiceImpl implements StudentServiceInterface {
     }
 
     @Override
-    public Student updateProgramByCodeImpl(String programId, String code) {
+    public StudentResponseDTO updateProgramByCodeImpl(String programId, String code) {
         Student student = studentRepository.findByCode(code);
         student.setProgramID(programId);
-        return studentRepository.save(student);
+        Student updatedStudent = studentRepository.save(student);
+        return studentMapper.toResponseDTO(updatedStudent);
     }
 
     @Override
-    public Student createStudentImpl(MultipartFile file, String firstName, String lastName, String programID) throws IOException {
+    public StudentResponseDTO createStudentImpl(StudentResponseDTO studentResponseDTO, MultipartFile file) throws IOException {
+        // 1. Préparer le dossier
         Path filePath = Paths.get(System.getProperty("user.home"), "edd-demo-yousfiData", "users-photos");
-        if (!Files.exists(filePath)) Files.createDirectory(filePath);
+        if (!Files.exists(filePath)) {
+            Files.createDirectories(filePath); // plus sûr que createDirectory
+        }
 
+        // 2. Récupérer l’extension du fichier
         String originalFilename = file.getOriginalFilename();
         String extension = "";
-
         if (originalFilename != null && originalFilename.contains(".")) {
             extension = originalFilename.substring(originalFilename.lastIndexOf("."));
         }
 
-        //String fileName = studentRepository.findByCode(programID).getCode() +  extension;
+        // 3. Générer un nom de fichier unique
         String fileName = UUID.randomUUID() + extension;
         Path destination = filePath.resolve(fileName);
         file.transferTo(destination);
 
-        Student student = Student.builder()
+        // 4. Mapper le DTO vers l’entité
+        Student student = studentMapper.toResponseEntity(studentResponseDTO);
+        student.setPhoto(fileName);
+
+
+        // 5. Générer un ID unique (si UUID et non auto-généré par DB)
+        student.setId(UUID.randomUUID().toString());
+
+        // 6. Sauvegarder en DB
+        Student savedStudent = studentRepository.save(student);
+
+        // 7. Retourner le ResponseDTO
+        return studentMapper.toResponseDTO(savedStudent);
+    }
+
+
+    /*  Student student = Student.builder()
                 .Id(UUID.randomUUID().toString())
                 .firstName(firstName)
                 .lastName(lastName)
@@ -107,5 +131,6 @@ public class StudentServiceImpl implements StudentServiceInterface {
                 .build();
 
         return studentRepository.save(student);
-    }
+    **/
+
 }
