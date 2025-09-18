@@ -1,6 +1,7 @@
 package com.learn.demostudentpay.controllers;
 
-import com.learn.demostudentpay.entites.Student;
+import com.learn.demostudentpay.dtos.StudentDTO.StudentRequestDTO;
+import com.learn.demostudentpay.dtos.StudentDTO.StudentResponseDTO;
 import com.learn.demostudentpay.services.serviceInterface.StudentServiceInterface;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
@@ -24,17 +25,17 @@ public class StudentRestController {
     }
 
     @GetMapping("/all")
-    public List<Student> getAllStudents() {
+    public List<StudentResponseDTO> getAllStudents() {
         return studentService.getAllStudentsImpl();
     }
 
     @GetMapping("/{code}")
-    public Student getStudentByCode(@PathVariable String code) {
+    public StudentResponseDTO getStudentByCode(@PathVariable String code) {
         return studentService.getStudentByCodeImpl(code);
     }
 
     @GetMapping("/programId")
-    public List<Student> getStudentByProgramId(@RequestParam String programId) {
+    public List<StudentResponseDTO> getStudentByProgramId(@RequestParam String programId) {
         return studentService.getStudentByProgramIdImpl(programId);
     }
 
@@ -47,7 +48,7 @@ public class StudentRestController {
      * Put Methods
      * */
     @PutMapping("/programId/update/{code}")
-    public Student updateProgramByCode(@RequestParam String programId, @PathVariable String code) {
+    public StudentResponseDTO updateProgramByCode(@RequestParam String programId, @PathVariable String code) {
         return studentService.updateProgramByCodeImpl(programId, code);
     }
 
@@ -55,9 +56,9 @@ public class StudentRestController {
      * Post Methods
      * */
     @PostMapping(path = "/newStudent/", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public Student createStudent(@RequestParam MultipartFile file, String firstName,
-                                 String lastName, String programID) throws IOException {
-        return studentService.createStudentImpl(file, firstName, lastName, programID);
+    public StudentResponseDTO createStudent(@RequestParam StudentResponseDTO StudentResponseDTO,
+                                            @RequestParam MultipartFile file) throws IOException {
+        return studentService.createStudentImpl(StudentResponseDTO, file);
     }
 
 }
